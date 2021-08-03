@@ -6,14 +6,17 @@ namespace League\Bundle\OAuth2ServerBundle\Repository;
 
 use League\Bundle\OAuth2ServerBundle\Converter\ScopeConverterInterface;
 use League\Bundle\OAuth2ServerBundle\Entity\AccessToken as AccessTokenEntity;
+use League\Bundle\OAuth2ServerBundle\Event\RoleResolveEvent;
 use League\Bundle\OAuth2ServerBundle\Manager\AccessTokenManagerInterface;
 use League\Bundle\OAuth2ServerBundle\Manager\ClientManagerInterface;
 use League\Bundle\OAuth2ServerBundle\Model\AbstractClient;
 use League\Bundle\OAuth2ServerBundle\Model\AccessToken as AccessTokenModel;
+use League\Bundle\OAuth2ServerBundle\OAuth2Events;
 use League\OAuth2\Server\Entities\AccessTokenEntityInterface;
 use League\OAuth2\Server\Entities\ClientEntityInterface;
 use League\OAuth2\Server\Exception\UniqueTokenIdentifierConstraintViolationException;
 use League\OAuth2\Server\Repositories\AccessTokenRepositoryInterface;
+use Symfony\Component\EventDispatcher\EventDispatcherInterface;
 
 final class AccessTokenRepository implements AccessTokenRepositoryInterface
 {
@@ -32,14 +35,21 @@ final class AccessTokenRepository implements AccessTokenRepositoryInterface
      */
     private $scopeConverter;
 
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
     public function __construct(
         AccessTokenManagerInterface $accessTokenManager,
         ClientManagerInterface $clientManager,
-        ScopeConverterInterface $scopeConverter
+        ScopeConverterInterface $scopeConverter,
+        EventDispatcherInterface $eventDispatcher
     ) {
         $this->accessTokenManager = $accessTokenManager;
         $this->clientManager = $clientManager;
         $this->scopeConverter = $scopeConverter;
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -55,6 +65,18 @@ final class AccessTokenRepository implements AccessTokenRepositoryInterface
         foreach ($scopes as $scope) {
             $accessToken->addScope($scope);
         }
+
+        // @fixme: This a pile of shit that need to be removed once custom claims is implemented. See
+        //         https://github.com/thephpleague/oauth2-server/pull/1122
+        $event = $this->eventDispatcher->dispatch(
+            new RoleResolveEvent(
+                $clientEntity,
+                $userIdentifier,
+            ),
+            OAuth2Events::ROLE_RESOLVE
+        );
+
+        $accessToken->setRoles($event->getRoles());
 
         return $accessToken;
     }

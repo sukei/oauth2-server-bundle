@@ -71,6 +71,7 @@ return static function (ContainerConfigurator $container): void {
                 service(AccessTokenManagerInterface::class),
                 service(ClientManagerInterface::class),
                 service(ScopeConverterInterface::class),
+                service(EventDispatcherInterface::class),
             ])
         ->alias(AccessTokenRepositoryInterface::class, 'league.oauth2_server.repository.access_token')
         ->alias(AccessTokenRepository::class, 'league.oauth2_server.repository.access_token')

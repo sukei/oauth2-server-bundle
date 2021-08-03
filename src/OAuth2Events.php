@@ -15,6 +15,14 @@ final class OAuth2Events
     public const USER_RESOLVE = 'league.oauth2_server.event.user_resolve';
 
     /**
+     * The ROLE_RESOLVE event occurs right before the user obtains their
+     * valid access token.
+     *
+     * You should set the user roles here if applicable.
+     */
+    public const ROLE_RESOLVE = 'league.oauth2_server.event.role_resolve';
+
+    /**
      * The SCOPE_RESOLVE event occurs right before the user obtains their
      * valid access token.
      *
